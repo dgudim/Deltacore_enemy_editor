@@ -5,6 +5,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.assets.AssetManager;
+import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -28,16 +29,16 @@ import static com.deo.flapdedit.DUtils.updateCamera;
 
 public class EnemyEditScreen implements Screen {
 
-    private SpriteBatch batch;
-    private OrthographicCamera camera;
-    private ScreenViewport viewport;
-    private Stage stage;
-    private TextureAtlas enemies;
-    private ShapeRenderer shapeRenderer;
+    private final SpriteBatch batch;
+    private final OrthographicCamera camera;
+    private final ScreenViewport viewport;
+    private final Stage stage;
+    private final TextureAtlas enemies;
+    private final ShapeRenderer shapeRenderer;
 
-    private int fireEffectCount;
-    private int[] fireOffsetsX;
-    private int[] fireOffsetsY;
+    private final int fireEffectCount;
+    private final int[] fireOffsetsX;
+    private final int[] fireOffsetsY;
     Array<Float> fireParticleEffectAngles;
     Array<Float> fireParticleEffectDistances;
 
@@ -48,9 +49,12 @@ public class EnemyEditScreen implements Screen {
     private float bulletAngle;
     private float bulletDistance;
 
-    private float x, y, width, height;
+    private final float x;
+    private final float y;
+    private final float width;
+    private final float height;
     private int currentFlame;
-    private Label offsetLabel;
+    private final Label offsetLabel;
 
     private float droneOffsetX;
     private float droneOffsetY;
@@ -58,41 +62,38 @@ public class EnemyEditScreen implements Screen {
     private float droneHeight;
     private float droneAngle;
     private float droneDistance;
+    
+    private final Game game;
+    private final AssetManager assetManager;
+    private final JsonValue enemyData;
+    private final Screen prev;
 
-    private String[] types;
-    private String currentType;
-
-    private Game game;
-    private AssetManager assetManager;
-    private JsonValue enemyData;
-    private Screen prev;
-
-    EnemyEditScreen(SpriteBatch batch, AssetManager assetManager, final Game game, JsonValue enemyData, final Screen prev, String currentType) {
+    final FileHandle configPath;
+    final FileHandle atlasPath;
+    
+    BitmapFont font;
+    
+    EnemyEditScreen(SpriteBatch batch, AssetManager assetManager, final Game game, JsonValue enemyData, final Screen prev, FileHandle configPath, FileHandle atlasPath) {
         this.batch = batch;
         this.game = game;
         this.assetManager = assetManager;
         this.enemyData = enemyData;
         this.prev = prev;
+        this.configPath = configPath;
+        this.atlasPath = atlasPath;
+        
+        font = assetManager.get("font2(old).fnt");
+        
         camera = new OrthographicCamera(800, 480);
         viewport = new ScreenViewport(camera);
         stage = new Stage(viewport);
-
-        types = new String[]{"normal", "easterEgg"};
-        this.currentType = currentType;
-
-        enemies = new TextureAtlas(Gdx.files.external("Downloads/flappyDemon - Copy/android/assets/enemies/enemies.atlas"));
-
-        Image enemy;
-
-        if (enemyData.get(currentType).get("body").getBoolean("hasAnimation")) {
-            TextureAtlas animation = new TextureAtlas(Gdx.files.external("Downloads/flappyDemon - Copy/android/assets/" + enemyData.get(currentType).get("body").getString("texture")));
-            enemy = new Image(animation.findRegion(enemyData.name));
-        } else {
-            enemy = new Image(enemies.findRegion(enemyData.get(currentType).get("body").getString("texture")));
-        }
-
-        width = enemyData.get(currentType).get("body").getFloat("width");
-        height = enemyData.get(currentType).get("body").getFloat("height");
+        
+        enemies = new TextureAtlas(atlasPath);
+        
+        Image enemy = new Image(enemies.findRegion(enemyData.getString("texture")));
+        
+        width = enemyData.getFloat("width");
+        height = enemyData.getFloat("height");
         x = 400 - width / 2;
         y = 240 - height / 2;
         enemy.setBounds(x, y, width, height);
@@ -101,7 +102,7 @@ public class EnemyEditScreen implements Screen {
         UIComposer uiComposer = new UIComposer(assetManager);
         uiComposer.loadStyles("workshopRed");
 
-        offsetLabel = uiComposer.addText("", (BitmapFont) assetManager.get("font2(old).fnt"), 0.31f);
+        offsetLabel = uiComposer.addText("", font, 0.31f);
         offsetLabel.setSize(400, 330);
         offsetLabel.setPosition(210, 150);
 
@@ -122,7 +123,7 @@ public class EnemyEditScreen implements Screen {
         fireParticleEffectAngles = new Array<>();
         fireParticleEffectDistances = new Array<>();
 
-        fireEffectCount = enemyData.get(currentType).get("body").get("fire").getInt("count");
+        fireEffectCount = enemyData.get("fire").getInt("count");
 
         fireOffsetsX = new int[fireEffectCount];
         fireOffsetsY = new int[fireEffectCount];
@@ -130,28 +131,28 @@ public class EnemyEditScreen implements Screen {
         fireParticleEffectAngles.setSize(fireEffectCount);
 
         for (int i = 0; i < fireEffectCount; i++) {
-            fireOffsetsX[i] = enemyData.get(currentType).get("body").get("fire").get("offset" + i).asIntArray()[0];
-            fireOffsetsY[i] = enemyData.get(currentType).get("body").get("fire").get("offset" + i).asIntArray()[1];
+            fireOffsetsX[i] = enemyData.get("fire").get("offset" + i).asIntArray()[0];
+            fireOffsetsY[i] = enemyData.get("fire").get("offset" + i).asIntArray()[1];
             fireParticleEffectAngles.set(i, MathUtils.atan2(fireOffsetsY[i], fireOffsetsX[i]) * MathUtils.radiansToDegrees);
             fireParticleEffectDistances.set(i, (float) Math.sqrt(fireOffsetsY[i] * fireOffsetsY[i] + fireOffsetsX[i] * fireOffsetsX[i]));
         }
 
-        if (enemyData.get(currentType).get("body").getBoolean("spawnsBullets")) {
-            bulletOffsetX = enemyData.get(currentType).get("bullet").get("offset").asIntArray()[0];
-            bulletOffsetY = enemyData.get(currentType).get("bullet").get("offset").asIntArray()[1];
-            bulletHeight = enemyData.get(currentType).get("bullet").getFloat("height");
-            bulletWidth = enemyData.get(currentType).get("bullet").getFloat("width");
+        if (enemyData.getBoolean("spawnsBullets")) {
+            bulletOffsetX = enemyData.get("bullet").get("offset").asIntArray()[0];
+            bulletOffsetY = enemyData.get("bullet").get("offset").asIntArray()[1];
+            bulletHeight = enemyData.get("bullet").getFloat("height");
+            bulletWidth = enemyData.get("bullet").getFloat("width");
             bulletOffsetX += bulletWidth / 2;
             bulletOffsetY += bulletHeight / 2;
             bulletAngle = MathUtils.atan2(bulletOffsetY, bulletOffsetX) * MathUtils.radiansToDegrees;
             bulletDistance = (float) Math.sqrt(bulletOffsetY * bulletOffsetY + bulletOffsetX * bulletOffsetX);
         }
 
-        if (enemyData.get(currentType).get("body").getBoolean("spawnsDrones")) {
-            droneOffsetX = enemyData.get(currentType).get("body").get("droneSpawnOffset").asIntArray()[0];
-            droneOffsetY = enemyData.get(currentType).get("body").get("droneSpawnOffset").asIntArray()[1];
-            droneHeight = enemyData.parent.get(enemyData.get(currentType).get("body").getString("droneType")).get(currentType).get("body").getFloat("height");
-            droneWidth = enemyData.parent.get(enemyData.get(currentType).get("body").getString("droneType")).get(currentType).get("body").getFloat("width");
+        if (enemyData.getBoolean("spawnsDrones")) {
+            droneOffsetX = enemyData.get("droneSpawnOffset").asIntArray()[0];
+            droneOffsetY = enemyData.get("droneSpawnOffset").asIntArray()[1];
+            droneHeight = enemyData.parent.get(enemyData.getString("droneType")).getFloat("height");
+            droneWidth = enemyData.parent.get(enemyData.getString("droneType")).getFloat("width");
             droneOffsetX += droneWidth / 2;
             droneOffsetY += droneHeight;
             droneAngle = MathUtils.atan2(droneOffsetY, droneOffsetX) * MathUtils.radiansToDegrees;
@@ -174,9 +175,14 @@ public class EnemyEditScreen implements Screen {
         batch.setProjectionMatrix(camera.combined);
         shapeRenderer.setProjectionMatrix(camera.combined);
 
+        batch.begin();
+        font.getData().setScale(0.3f);
+        font.draw(batch, "Cyan - fire\nRed - bullet\nGreen - drone", 0,  430);
+        batch.end();
+        
         stage.draw();
         stage.act(delta);
-
+        
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
 
         shapeRenderer.setColor(new Color().set(0, 1, 1, 0.5f));
@@ -222,11 +228,7 @@ public class EnemyEditScreen implements Screen {
         }
 
         if (Gdx.input.isKeyPressed(Input.Keys.T)) {
-            if(currentType.equals(types[0])){
-                 game.setScreen(new EnemyEditScreen(batch, assetManager, game, enemyData, prev, types[1]));
-            }else{
-                game.setScreen(new EnemyEditScreen(batch, assetManager, game, enemyData, prev, types[0]));
-            }
+            game.setScreen(new EnemyEditScreen(batch, assetManager, game, enemyData, prev, configPath, atlasPath));
         }
 
         if (xOffset != 0 || yOffset != 0) {

@@ -36,30 +36,30 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import static com.deo.flapdedit.DUtils.updateCamera;
 
 public class EnemyTimelineScreen implements Screen {
-    private SpriteBatch batch;
-    private OrthographicCamera camera;
-    private ScreenViewport viewport;
-    private JsonValue enemyJsonData;
-    private Stage stage;
-    private Array<Image> enemySpawnRangesImages;
-    private Array<Float> enemySpawnRangesWidths;
-    private Array<Float> enemySpawnRangesXs;
-    private Label enemyInfo;
+    private final SpriteBatch batch;
+    private final OrthographicCamera camera;
+    private final ScreenViewport viewport;
+    private final JsonValue enemyJsonData;
+    private final Stage stage;
+    private final Array<Image> enemySpawnRangesImages;
+    private final Array<Float> enemySpawnRangesWidths;
+    private final Array<Float> enemySpawnRangesXs;
+    private final Label enemyInfo;
 
-    public EnemyTimelineScreen(final SpriteBatch batch, final AssetManager assetManager, final Game game) {
+    public EnemyTimelineScreen(final SpriteBatch batch, final AssetManager assetManager, final Game game, final FileHandle configFile, final FileHandle atlasFile) {
         this.batch = batch;
         camera = new OrthographicCamera(800, 480);
         viewport = new ScreenViewport(camera);
-        enemyJsonData = new JsonReader().parse(Gdx.files.external("Downloads/flappyDemon - Copy/android/assets/enemies/enemies.json"));
+        enemyJsonData = new JsonReader().parse(configFile);
         final Array<TextButton> enemies = new Array<>();
         Array<int[]> enemySpawnRanges = new Array<>();
         enemySpawnRangesImages = new Array<>();
         enemySpawnRangesWidths = new Array<>();
         enemySpawnRangesXs = new Array<>();
 
-        String[] colors = new String[]{"#ff000088", "#22ff0088", "#00ffea88",
-                "#fff70088", "#2b00ff88", "#ff730088",
-                "#dd00ff88", "#b7ff0088", "#0095ff88", "#ff005588"};
+        String[] colors = new String[]{"#dd0000FF", "#22dd00FF", "#00ddeaFF",
+                "#ddf700FF", "#2b00ddFF", "#dd7300FF",
+                "#dd00ddFF", "#b7dd00FF", "#0095ddFF", "#dd0055FF"};
 
         UIComposer uiComposer = new UIComposer(assetManager);
 
@@ -119,7 +119,7 @@ public class EnemyTimelineScreen implements Screen {
 
             final Image timelineImageFragment = new Image(timelineFragment);
             timelineImageFragment.setX(x);
-            timelineImageFragment.setY(2.5f);
+            timelineImageFragment.setY(i*10);
             timelineImageFragment.setWidth(width);
             timelineImageFragment.setHeight(35);
 
@@ -130,40 +130,11 @@ public class EnemyTimelineScreen implements Screen {
             timelineImageFragment.addListener(new ClickListener() {
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
-                    String info = enemyJsonData.get(finalI).name + " Info: \n";
-                    boolean canShoot = enemyJsonData.get(finalI).get("normal").get("body").get("spawnsBullets").asBoolean();
-                    info = info.concat("Speed: " + enemyJsonData.get(finalI).get("normal").get("body").get("speed").asString() + "\n");
-                    info = info.concat("Health: " + enemyJsonData.get(finalI).get("normal").get("body").get("health").asString() + "\n");
-                    if (canShoot) {
-                        info = info.concat("Can Aim: " + enemyJsonData.get(finalI).get("normal").get("body").get("canAim").asString() + "\n");
-                    }
-                    info = info.concat("Has Animation: " + enemyJsonData.get(finalI).get("normal").get("body").get("hasAnimation").asString() + "\n");
-                    info = info.concat("Homing: " + enemyJsonData.get(finalI).get("normal").get("body").get("homing").asString() + "\n");
-                    boolean spawnsDrones = enemyJsonData.get(finalI).get("normal").get("body").get("spawnsDrones").asBoolean();
-                    info = info.concat("Spawns Drones: " + spawnsDrones + "\n");
-                    if (spawnsDrones) {
-                        info = info.concat("Drone Type: " + enemyJsonData.get(finalI).get("normal").get("body").get("droneType").asString() + "\n");
-                        info = info.concat("Drones Per Spawn: " + enemyJsonData.get(finalI).get("normal").get("body").get("dronesPerSpawn").asString() + "\n");
-                        info = info.concat("Drone Spawn Delay: " + enemyJsonData.get(finalI).get("normal").get("body").get("droneSpawnDelay").asString() + "\n");
-                    }
-                    info = info.concat("Shoots: " + canShoot + "\n");
-                    if (canShoot) {
-                        info = info.concat("Shooting Delay: " + enemyJsonData.get(finalI).get("normal").get("body").get("shootingDelay").asString() + "\n");
-                        info = info.concat("Spread: " + enemyJsonData.get(finalI).get("normal").get("bullet").get("spread").asString() + "\n");
-                        info = info.concat("Bullet Speed: " + enemyJsonData.get(finalI).get("normal").get("bullet").get("speed").asString() + "\n");
-                        info = info.concat("Damage: " + enemyJsonData.get(finalI).get("normal").get("bullet").get("damage").asString() + "\n");
-                        info = info.concat("Bullets Per Shot: " + enemyJsonData.get(finalI).get("normal").get("bullet").get("bulletsPerShot").asString() + "\n");
-                    }
-                    info = info.concat("Spawn Delay: " + enemyJsonData.get(finalI).get("spawnDelay").asString() + "\n");
-                    info = info.concat("Spawn Height: from " + enemyJsonData.get(finalI).get("spawnHeight").asIntArray()[0] + " to " + enemyJsonData.get(finalI).get("spawnHeight").asIntArray()[1] + "\n");
-                    info = info.concat("Score Spawn Conditions: from " + enemyJsonData.get(finalI).get("spawnConditions").get("score").asIntArray()[0] + " to " + enemyJsonData.get(finalI).get("spawnConditions").get("score").asIntArray()[1] + "\n");
-                    info = info.concat("Enemies killed Spawn Conditions: from " + enemyJsonData.get(finalI).get("spawnConditions").get("enemiesKilled").asIntArray()[0] + " to " + enemyJsonData.get(finalI).get("spawnConditions").get("enemiesKilled").asIntArray()[1] + "\n");
+                    String info = enemyJsonData.get(finalI).toString();
                     for (int i = 0; i < enemySpawnRangesImages.size; i++) {
                         if (i == finalI) {
-                            enemySpawnRangesImages.get(i).setHeight(45);
                             enemySpawnRangesImages.get(i).setDebug(true);
                         } else {
-                            enemySpawnRangesImages.get(i).setHeight(35);
                             enemySpawnRangesImages.get(i).setDebug(false);
                         }
                     }
@@ -178,7 +149,7 @@ public class EnemyTimelineScreen implements Screen {
             enemyButton.addListener(new ActorGestureListener(){
                 @Override
                 public boolean longPress(Actor actor, float x, float y) {
-                    game.setScreen(new EnemyEditScreen(batch, assetManager, game, enemyJsonData.get(finalI), EnemyTimelineScreen.this, "normal"));
+                    game.setScreen(new EnemyEditScreen(batch, assetManager, game, enemyJsonData.get(finalI), EnemyTimelineScreen.this, configFile, atlasFile));
                     return true;
                 }
             });
