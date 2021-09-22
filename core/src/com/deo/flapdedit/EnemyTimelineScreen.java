@@ -1,8 +1,8 @@
 package com.deo.flapdedit;
 
-import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Preferences;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.files.FileHandle;
@@ -30,27 +30,29 @@ import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.JsonReader;
-import com.badlogic.gdx.utils.JsonValue;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
 import static com.deo.flapdedit.DUtils.updateCamera;
 
 public class EnemyTimelineScreen implements Screen {
+    
+    Preferences prefs = Gdx.app.getPreferences("deltacore_edit_prefs");
+    
     private final SpriteBatch batch;
     private final OrthographicCamera camera;
     private final ScreenViewport viewport;
-    private final JsonValue enemyJsonData;
+    private final JsonEntry enemyJsonData;
     private final Stage stage;
     private final Array<Image> enemySpawnRangesImages;
     private final Array<Float> enemySpawnRangesWidths;
     private final Array<Float> enemySpawnRangesXs;
     private final Label enemyInfo;
 
-    public EnemyTimelineScreen(final SpriteBatch batch, final AssetManager assetManager, final Game game, final FileHandle configFile, final FileHandle atlasFile) {
+    public EnemyTimelineScreen(final SpriteBatch batch, final AssetManager assetManager, final Game game) {
         this.batch = batch;
         camera = new OrthographicCamera(800, 480);
         viewport = new ScreenViewport(camera);
-        enemyJsonData = new JsonReader().parse(configFile);
+        enemyJsonData = new JsonEntry(new JsonReader().parse(Gdx.files.absolute(prefs.getString("root")+"/enemies.json")));
         final Array<TextButton> enemies = new Array<>();
         Array<int[]> enemySpawnRanges = new Array<>();
         enemySpawnRangesImages = new Array<>();
@@ -71,6 +73,7 @@ public class EnemyTimelineScreen implements Screen {
         slider.align(Align.left);
 
         final Slider timelineScaleSlider = (Slider) slider.getChild(0);
+        timelineScaleSlider.setValue(10);
 
         final float timelineScale = timelineScaleSlider.getValue();
 
@@ -132,11 +135,7 @@ public class EnemyTimelineScreen implements Screen {
                 public void clicked(InputEvent event, float x, float y) {
                     String info = enemyJsonData.get(finalI).toString();
                     for (int i = 0; i < enemySpawnRangesImages.size; i++) {
-                        if (i == finalI) {
-                            enemySpawnRangesImages.get(i).setDebug(true);
-                        } else {
-                            enemySpawnRangesImages.get(i).setDebug(false);
-                        }
+                        enemySpawnRangesImages.get(i).setDebug(i == finalI);
                     }
                     enemyInfo.setText(info);
                 }
@@ -149,7 +148,7 @@ public class EnemyTimelineScreen implements Screen {
             enemyButton.addListener(new ActorGestureListener(){
                 @Override
                 public boolean longPress(Actor actor, float x, float y) {
-                    game.setScreen(new EnemyEditScreen(batch, assetManager, game, enemyJsonData.get(finalI), EnemyTimelineScreen.this, configFile, atlasFile));
+                    game.setScreen(new EnemyEditScreen(batch, assetManager, game, enemyJsonData.get(finalI), EnemyTimelineScreen.this));
                     return true;
                 }
             });

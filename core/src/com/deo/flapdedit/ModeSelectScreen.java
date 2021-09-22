@@ -2,6 +2,7 @@ package com.deo.flapdedit;
 
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Preferences;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.files.FileHandle;
@@ -19,13 +20,16 @@ import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
 import java.io.File;
+import java.util.logging.FileHandler;
 
 import javax.swing.JFileChooser;
 
 import static com.deo.flapdedit.DUtils.updateCamera;
 
 public class ModeSelectScreen implements Screen {
-
+    
+    Preferences prefs = Gdx.app.getPreferences("deltacore_edit_prefs");
+    
     private final SpriteBatch batch;
     private final Stage stage;
     private final OrthographicCamera camera;
@@ -33,13 +37,10 @@ public class ModeSelectScreen implements Screen {
     private final ShapeRenderer shapeRenderer;
     private float rotation;
     
-    private FileHandle configLocation;
-    private FileHandle atlasLocation;
-
     ModeSelectScreen(final Game game, final SpriteBatch batch, final AssetManager assetManager){
         camera = new OrthographicCamera(800, 480);
         viewport = new ScreenViewport(camera);
-
+        
         this.batch = batch;
         stage = new Stage(viewport);
 
@@ -69,10 +70,12 @@ public class ModeSelectScreen implements Screen {
         timelineModeButton.setPosition(275.0f, 245);
         enemyEditorButton.setPosition(275.0f, 175);
         
-        enemyEditorButton.setTouchable(Touchable.disabled);
-        timelineModeButton.setTouchable(Touchable.disabled);
-        enemyEditorButton.setColor(Color.GRAY);
-        timelineModeButton.setColor(Color.GRAY);
+        if(!prefs.contains("root")) {
+            enemyEditorButton.setTouchable(Touchable.disabled);
+            timelineModeButton.setTouchable(Touchable.disabled);
+            enemyEditorButton.setColor(Color.GRAY);
+            timelineModeButton.setColor(Color.GRAY);
+        }
         
         chooseConfigLocationButton.addListener(new ClickListener(){
             @Override
@@ -80,9 +83,9 @@ public class ModeSelectScreen implements Screen {
                 callFileChooser(new FileDialogueAction(){
                     @Override
                     void performAction(File[] selectedFiles) {
-                        if(selectedFiles[0].isFile()){
-                            configLocation = Gdx.files.absolute(selectedFiles[0].getAbsolutePath());
-                            atlasLocation = Gdx.files.absolute(selectedFiles[0].getAbsolutePath().replace("json","atlas"));
+                        if(selectedFiles[0].exists() ){
+                            prefs.putString("root", selectedFiles[0].getAbsolutePath());
+                            prefs.flush();
                             enemyEditorButton.setTouchable(Touchable.enabled);
                             timelineModeButton.setTouchable(Touchable.enabled);
                             enemyEditorButton.setColor(Color.WHITE);
@@ -103,14 +106,14 @@ public class ModeSelectScreen implements Screen {
         timelineModeButton.addListener(new ClickListener(){
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                game.setScreen(new EnemyTimelineScreen(batch, assetManager, game, configLocation, atlasLocation));
+                game.setScreen(new EnemyTimelineScreen(batch, assetManager, game));
             }
         });
     }
     
     void callFileChooser(FileDialogueAction action, boolean multiSelect) {
         JFileChooser jFileChooser = new JFileChooser(new File("C:\\"));
-        jFileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        jFileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         jFileChooser.setMultiSelectionEnabled(multiSelect);
         
         int returnVal = jFileChooser.showOpenDialog(null);

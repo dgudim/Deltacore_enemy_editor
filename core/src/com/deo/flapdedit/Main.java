@@ -6,15 +6,14 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 
+import static com.deo.flapdedit.DUtils.clearLog;
+
 public class Main extends Game {
-
-    private AssetManager assetManager;
-    private SpriteBatch batch;
-
+    
     @Override
     public void create() {
-        assetManager = new AssetManager();
-        batch = new SpriteBatch();
+        AssetManager assetManager = new AssetManager();
+        SpriteBatch batch = new SpriteBatch();
         assetManager.load("menuButtons.atlas", TextureAtlas.class);
         assetManager.load("shopButtons.atlas", TextureAtlas.class);
         assetManager.load("slots.atlas", TextureAtlas.class);
@@ -27,6 +26,7 @@ public class Main extends Game {
         while(!assetManager.isFinished()){
             assetManager.update();
         }
+        clearLog();
         this.setScreen(new ModeSelectScreen(this, batch, assetManager));
     }
 }
