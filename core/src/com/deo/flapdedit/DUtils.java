@@ -64,8 +64,7 @@ public class DUtils {
     }
     
     public static void clearLog() {
-        FileHandle file = Gdx.files.external(currentRootDir + "lastLog.txt");
-        file.writeString("", false);
+        logFile.writeString("", false);
         logBuffer = "";
         lastLine = "";
     }
