@@ -40,8 +40,8 @@ public class EnemyEditScreen implements Screen {
     private final ShapeRenderer shapeRenderer;
     
     private final int fireEffectCount;
-    private final int[] fireOffsetsX;
-    private final int[] fireOffsetsY;
+    private final float[] fireOffsetsX;
+    private final float[] fireOffsetsY;
     Array<Float> fireParticleEffectAngles;
     Array<Float> fireParticleEffectDistances;
     
@@ -72,6 +72,9 @@ public class EnemyEditScreen implements Screen {
     private final Screen prev;
     
     BitmapFont font;
+    
+    float lastTouchX;
+    float lastTouchY;
     
     EnemyEditScreen(SpriteBatch batch, AssetManager assetManager, final Game game, JsonEntry enemyData, final Screen prev) {
         this.batch = batch;
@@ -129,8 +132,8 @@ public class EnemyEditScreen implements Screen {
         
         fireEffectCount = enemyData.get("fire").getInt(0, "count");
         
-        fireOffsetsX = new int[fireEffectCount];
-        fireOffsetsY = new int[fireEffectCount];
+        fireOffsetsX = new float[fireEffectCount];
+        fireOffsetsY = new float[fireEffectCount];
         fireParticleEffectDistances.setSize(fireEffectCount);
         fireParticleEffectAngles.setSize(fireEffectCount);
         
@@ -188,21 +191,22 @@ public class EnemyEditScreen implements Screen {
         stage.act(delta);
         
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        
-        shapeRenderer.setColor(new Color().set(0, 1, 1, 0.5f));
+        Gdx.gl.glEnable(Gdx.gl20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        shapeRenderer.setColor(new Color().set(0, 1, 1, 0.7f));
         for (int i = 0; i < fireEffectCount; i++) {
             shapeRenderer.circle(x + width / 2 + MathUtils.cosDeg(fireParticleEffectAngles.get(i)) * fireParticleEffectDistances.get(i), y + height / 2 + MathUtils.sinDeg(fireParticleEffectAngles.get(i)) * fireParticleEffectDistances.get(i), 3);
         }
-        shapeRenderer.setColor(new Color().set(1, 0, 0, 0.5f));
+        shapeRenderer.setColor(new Color().set(1, 0, 0, 0.7f));
         shapeRenderer.circle(x + width / 2 + MathUtils.cosDeg(bulletAngle) * bulletDistance, y + height / 2 + MathUtils.sinDeg(bulletAngle) * bulletDistance, 3);
         
-        shapeRenderer.setColor(new Color().set(0, 1, 0, 0.5f));
+        shapeRenderer.setColor(new Color().set(0, 1, 0, 0.7f));
         shapeRenderer.circle(x + width / 2 + MathUtils.cosDeg(droneAngle) * droneDistance, y + height / 2 + MathUtils.sinDeg(droneAngle) * droneDistance, 3);
         
         shapeRenderer.end();
         
-        int yOffset = 0;
-        int xOffset = 0;
+        float yOffset = 0;
+        float xOffset = 0;
         
         if (Gdx.input.isKeyPressed(Input.Keys.W)) {
             yOffset = 1;
@@ -216,6 +220,13 @@ public class EnemyEditScreen implements Screen {
         if (Gdx.input.isKeyPressed(Input.Keys.D)) {
             xOffset = 1;
         }
+        
+        if (Gdx.input.isTouched() && Gdx.input.isKeyPressed(Input.Keys.P)) {
+            xOffset = (Gdx.input.getX() - lastTouchX) / 10f;
+            yOffset = (lastTouchY - Gdx.input.getY()) / 10f;
+        }
+        lastTouchX = Gdx.input.getX();
+        lastTouchY = Gdx.input.getY();
         
         if (Gdx.input.isKeyJustPressed(Input.Keys.C)) {
             currentFlame++;
